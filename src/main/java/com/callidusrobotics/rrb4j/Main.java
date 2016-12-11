@@ -48,6 +48,9 @@ public final class Main {
     }
     System.out.println("");
 
+    System.out.println("Switch1: " + (rrb3.switch1Closed() ? "closed" : "open"));
+    System.out.println("Switch2: " + (rrb3.switch2Closed() ? "closed" : "open"));
+
     rrb3.shutdown();
   }
 }

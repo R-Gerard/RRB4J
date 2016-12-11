@@ -21,6 +21,7 @@
 package com.callidusrobotics.rrb4j;
 
 import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 
 /**
@@ -35,6 +36,7 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
 
   protected GpioController gpio;
   protected GpioPinDigitalOutput led1Pin, led2Pin;
+  protected GpioPinDigitalInput switch1Pin, switch2Pin;
 
   @Override
   public void setLed1(final boolean enabled) {
@@ -48,12 +50,12 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
 
   @Override
   public boolean switch1Closed() {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    return switch1Pin.isLow();
   }
 
   @Override
   public boolean switch2Closed() {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    return switch2Pin.isLow();
   }
 
   @Override

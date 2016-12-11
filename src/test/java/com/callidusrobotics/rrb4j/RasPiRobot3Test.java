@@ -20,6 +20,7 @@
 
 package com.callidusrobotics.rrb4j;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.After;
@@ -33,6 +34,7 @@ import com.callidusrobotics.rrb4j.RasPiRobot3;
 import com.callidusrobotics.rrb4j.RasPiRobotBoard;
 import com.callidusrobotics.rrb4j.RasPiRobotBoard.MotorDirection;
 import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
@@ -44,11 +46,16 @@ public class RasPiRobot3Test {
   @Mock GpioController mockGpio;
   @Mock GpioPinDigitalOutput mockLed1Pin;
   @Mock GpioPinDigitalOutput mockLed2Pin;
+  @Mock GpioPinDigitalInput mockSwitch1Pin;
+  @Mock GpioPinDigitalInput mockSwitch2Pin;
 
   @Before
   public void before() {
     when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_08, "LED1", PinState.LOW)).thenReturn(mockLed1Pin);
     when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_07, "LED2", PinState.LOW)).thenReturn(mockLed2Pin);
+
+    when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1")).thenReturn(mockSwitch1Pin);
+    when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2")).thenReturn(mockSwitch2Pin);
 
     // Initialize our test object
     board = new RasPiRobot3(mockGpio);
@@ -56,6 +63,9 @@ public class RasPiRobot3Test {
     // Verify constructor calls
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_08, "LED1", PinState.LOW);
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_07, "LED2", PinState.LOW);
+
+    verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
+    verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
 
     verify(mockLed1Pin).setShutdownOptions(true, PinState.LOW);
     verify(mockLed2Pin).setShutdownOptions(true, PinState.LOW);
@@ -88,18 +98,40 @@ public class RasPiRobot3Test {
     verify(mockLed2Pin).setState(true);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void switchesClosedSuccess() {
+    // Initialize mocks
+    when(mockSwitch1Pin.isLow()).thenReturn(true);
+    when(mockSwitch2Pin.isLow()).thenReturn(true);
+
     // Unit under test
-    board.switch1Closed();
-    board.switch2Closed();
+    final boolean switch1Closed = board.switch1Closed();
+    final boolean switch2Closed = board.switch2Closed();
+
+    // Verify results
+    verify(mockSwitch1Pin).isLow();
+    verify(mockSwitch2Pin).isLow();
+
+    assertTrue(switch1Closed);
+    assertTrue(switch2Closed);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void switchesOpenSuccess() {
+    // Initialize mocks
+    when(mockSwitch1Pin.isLow()).thenReturn(false);
+    when(mockSwitch2Pin.isLow()).thenReturn(false);
+
     // Unit under test
-    board.switch1Closed();
-    board.switch2Closed();
+    final boolean switch1Closed = board.switch1Closed();
+    final boolean switch2Closed = board.switch2Closed();
+
+    // Verify results
+    verify(mockSwitch1Pin).isLow();
+    verify(mockSwitch2Pin).isLow();
+
+    assertFalse(switch1Closed);
+    assertFalse(switch2Closed);
   }
 
   @Test(expected = UnsupportedOperationException.class)

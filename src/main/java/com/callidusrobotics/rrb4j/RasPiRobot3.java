@@ -58,5 +58,9 @@ public class RasPiRobot3 extends AbstractRasPiRobot {
 
     led2Pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07, "LED2", PinState.LOW);
     led2Pin.setShutdownOptions(true, PinState.LOW);
+
+    // TODO: Add support for debounce and event listeners
+    switch1Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
+    switch2Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
   }
 }
