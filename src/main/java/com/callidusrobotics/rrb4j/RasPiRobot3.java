@@ -22,6 +22,7 @@ package com.callidusrobotics.rrb4j;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiGpioProvider;
 import com.pi4j.io.gpio.RaspiPin;
@@ -29,6 +30,10 @@ import com.pi4j.io.gpio.RaspiPinNumberingScheme;
 
 /**
  * RasPiRobot Board v3 implementation.
+ * <p>
+ * This implementation is thread-safe but not reentrant.<br>
+ * Multi-threaded applications will need to implement their own synchronization
+ * for each underlying hardware resource to prevent contention problems.
  *
  * @author Rusty Gerard
  * @since 1.0.0
@@ -62,5 +67,10 @@ public class RasPiRobot3 extends AbstractRasPiRobot {
     // TODO: Add support for debounce and event listeners
     switch1Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     switch2Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    rangeTriggerPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW);
+    rangeTriggerPin.setShutdownOptions(true, PinState.LOW);
+
+    rangeEchoPin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_23, "Echo", PinPullResistance.PULL_DOWN);
   }
 }

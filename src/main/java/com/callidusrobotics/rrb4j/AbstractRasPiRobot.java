@@ -20,9 +20,13 @@
 
 package com.callidusrobotics.rrb4j;
 
+import java.io.IOException;
+
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinState;
+import com.pi4j.wiringpi.Gpio;
 
 /**
  * Base class for implementations of <code>RasPiRobotBoard</code>.
@@ -37,6 +41,8 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
   protected GpioController gpio;
   protected GpioPinDigitalOutput led1Pin, led2Pin;
   protected GpioPinDigitalInput switch1Pin, switch2Pin;
+  protected GpioPinDigitalOutput rangeTriggerPin;
+  protected GpioPinDigitalInput rangeEchoPin;
 
   @Override
   public void setLed1(final boolean enabled) {
@@ -78,13 +84,62 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
     throw new UnsupportedOperationException(NOT_IMPLEMENTED);
   }
 
+  @SuppressWarnings("PMD.PrematureDeclaration")
   @Override
-  public float getRangeCm() {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+  public float getRangeCm() throws IOException {
+    // Pulse the trigger pin for 10 microseconds
+    rangeTriggerPin.setState(PinState.HIGH);
+    delayMicroseconds(TRIGGER_MICROS);
+    rangeTriggerPin.setState(PinState.LOW);
+
+    // Wait for start of echo pulse from the rangefinder (rising edge of echo pin)
+    if (!waitForEvent(rangeEchoPin, PinState.HIGH, ECHO_DELAY_MICROS)) {
+      throw new IOException("Rangefinder is not connected");
+    }
+    final long sendTime = currentTimeNanos();
+
+    // Measure pulse width (time until falling edge of echo pin)
+    if (!waitForEvent(rangeEchoPin, PinState.LOW, MAX_PULSE_MICROS)) {
+      // Echo went beyond maximum measurable distance
+      return Float.POSITIVE_INFINITY;
+    }
+    final long receiveTime = currentTimeNanos();
+
+    // Compute distance traveled (halved to account for round-trip duration)
+    final long durationMicros = (receiveTime - sendTime) / (1000L * 2);
+    final float distMm = SOS_MM_MICROS * durationMicros;
+
+    return distMm / 10.0f;
   }
 
   @Override
   public void shutdown() {
     gpio.shutdown();
+  }
+
+  // Wrapper around Gpio.delayMicroseconds to hide static methods
+  protected void delayMicroseconds(final long microseconds) {
+    Gpio.delayMicroseconds(microseconds);
+  }
+
+  // Wrapper around System.nanoTime to hide static methods
+  protected long currentTimeNanos() {
+    return System.nanoTime();
+  }
+
+  // Wait up to a specified number of microseconds for the input pin to indicate a particular value
+  protected boolean waitForEvent(final GpioPinDigitalInput pin, final PinState value, final long timeoutMicros) {
+    // TODO: Re-write this to use interrupts instead of software polling? This seems to be *good enough* for centimeter resolution.
+    final long startTime = currentTimeNanos();
+    long endTime = startTime;
+    while ((endTime - startTime) < (1000L * timeoutMicros)) {
+      if (pin.getState() == value) {
+        return true;
+      }
+
+      endTime = currentTimeNanos();
+    }
+
+    return false;
   }
 }

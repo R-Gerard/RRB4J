@@ -23,10 +23,15 @@ package com.callidusrobotics.rrb4j;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -36,18 +41,23 @@ import com.callidusrobotics.rrb4j.RasPiRobotBoard.MotorDirection;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RasPiRobot3Test {
-  RasPiRobotBoard board;
+  RasPiRobot3 board;
 
   @Mock GpioController mockGpio;
   @Mock GpioPinDigitalOutput mockLed1Pin;
   @Mock GpioPinDigitalOutput mockLed2Pin;
   @Mock GpioPinDigitalInput mockSwitch1Pin;
   @Mock GpioPinDigitalInput mockSwitch2Pin;
+  @Mock GpioPinDigitalOutput mockTriggerPin;
+  @Mock GpioPinDigitalInput mockEchoPin;
+
+  @Rule public Timeout globalTimeout = Timeout.seconds(1);
 
   @Before
   public void before() {
@@ -57,8 +67,13 @@ public class RasPiRobot3Test {
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1")).thenReturn(mockSwitch1Pin);
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2")).thenReturn(mockSwitch2Pin);
 
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW)).thenReturn(mockTriggerPin);
+    when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_23, "Echo", PinPullResistance.PULL_DOWN)).thenReturn(mockEchoPin);
+
     // Initialize our test object
-    board = new RasPiRobot3(mockGpio);
+    board = spy(new RasPiRobot3(mockGpio));
+
+    doNothing().when(board).delayMicroseconds(Matchers.anyLong());
 
     // Verify constructor calls
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_08, "LED1", PinState.LOW);
@@ -66,6 +81,9 @@ public class RasPiRobot3Test {
 
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW);
+    verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_23, "Echo", PinPullResistance.PULL_DOWN);
 
     verify(mockLed1Pin).setShutdownOptions(true, PinState.LOW);
     verify(mockLed2Pin).setShutdownOptions(true, PinState.LOW);
@@ -172,10 +190,130 @@ public class RasPiRobot3Test {
     board.setStepper(MotorDirection.REVERSE, 20);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void getRangeCm() throws Exception {
+  @Test
+  public void getRange2Cm() throws Exception {
+    // 2 * 2 cm / speed of sound = 117.546798 microseconds
+    final float expectedDistCm = RasPiRobotBoard.RANGE_MIN_CM;
+    final int durationMicros = 118;
+
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW).thenReturn(PinState.HIGH).thenReturn(PinState.LOW);
+    doReturn(0L).doReturn(0L).doReturn(0L).doReturn(durationMicros * 1000L).when(board).currentTimeNanos();
+
     // Unit under test
-    board.getRangeCm();
+    final float estimatedDistCm = board.getRangeCm();
+
+    // Verify results
+    verify(mockTriggerPin).setState(PinState.HIGH);
+    verify(mockTriggerPin).setState(PinState.LOW);
+    verify(mockEchoPin, atLeastOnce()).getState();
+    verify(board).delayMicroseconds(10);
+
+    assertEquals(expectedDistCm, estimatedDistCm, 0.1f);
+  }
+
+  @Test
+  public void getRange100Cm() throws Exception {
+    // 2 * 100 cm / speed of sound = 5877.33992 microseconds
+    final float expectedDistCm = 100.0f;
+    final int durationMicros = 5877;
+
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW).thenReturn(PinState.HIGH).thenReturn(PinState.LOW);
+    doReturn(0L).doReturn(0L).doReturn(0L).doReturn(durationMicros * 1000L).when(board).currentTimeNanos();
+
+    // Unit under test
+    final float estimatedDistCm = board.getRangeCm();
+
+    // Verify results
+    verify(mockTriggerPin).setState(PinState.HIGH);
+    verify(mockTriggerPin).setState(PinState.LOW);
+    verify(mockEchoPin, atLeastOnce()).getState();
+    verify(board).delayMicroseconds(10);
+
+    assertEquals(expectedDistCm, estimatedDistCm, 0.1f);
+  }
+
+  @Test
+  public void getRange200Cm() throws Exception {
+    // 2 * 200 cm / speed of sound = 11754.6798 microseconds
+    final float expectedDistCm = 200.0f;
+    final int durationMicros = 11754;
+
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW).thenReturn(PinState.HIGH).thenReturn(PinState.LOW);
+    doReturn(0L).doReturn(0L).doReturn(0L).doReturn(durationMicros * 1000L).when(board).currentTimeNanos();
+
+    // Unit under test
+    final float estimatedDistCm = board.getRangeCm();
+
+    // Verify results
+    verify(mockTriggerPin).setState(PinState.HIGH);
+    verify(mockTriggerPin).setState(PinState.LOW);
+    verify(mockEchoPin, atLeastOnce()).getState();
+    verify(board).delayMicroseconds(10);
+
+    assertEquals(expectedDistCm, estimatedDistCm, 0.1f);
+  }
+
+  @Test
+  public void getRange400Cm() throws IOException {
+    // 2 * 400 cm / speed of sound = 23509.3597 microseconds
+    final float expectedDistCm = RasPiRobotBoard.RANGE_MAX_CM;
+    final int durationMicros = RasPiRobotBoard.MAX_PULSE_MICROS - 1;
+
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW).thenReturn(PinState.HIGH).thenReturn(PinState.LOW);
+    doReturn(0L).doReturn(0L).doReturn(0L).doReturn(durationMicros * 1000L).when(board).currentTimeNanos();
+
+    // Unit under test
+    final float estimatedDistCm = board.getRangeCm();
+
+    // Verify results
+    verify(mockTriggerPin).setState(PinState.HIGH);
+    verify(mockTriggerPin).setState(PinState.LOW);
+    verify(mockEchoPin, atLeastOnce()).getState();
+    verify(board).delayMicroseconds(10);
+
+    assertEquals(expectedDistCm, estimatedDistCm, 0.1f);
+  }
+
+  @Test(expected = IOException.class)
+  public void getRangeFailureNotConnected() throws Exception {
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW);
+    doReturn(0L).doReturn(RasPiRobotBoard.ECHO_DELAY_MICROS * 1000L).when(board).currentTimeNanos();
+
+    // Unit under test
+    try {
+      board.getRangeCm();
+    } catch (final IOException e) {
+      // Verify results
+      verify(mockTriggerPin).setState(PinState.HIGH);
+      verify(mockTriggerPin).setState(PinState.LOW);
+      verify(mockEchoPin, atLeastOnce()).getState();
+      verify(board).delayMicroseconds(10);
+
+      throw e;
+    }
+  }
+
+  @Test
+  public void getRangeInfinity() throws Exception {
+    // Initialize mocks
+    when(mockEchoPin.getState()).thenReturn(PinState.LOW).thenReturn(PinState.HIGH);
+    doReturn(0L).doReturn(0L).doReturn(0L).doReturn(0L).doReturn(RasPiRobotBoard.MAX_PULSE_MICROS * 1000L).when(board).currentTimeNanos();
+
+    // Unit under test
+    final float estimatedDistCm = board.getRangeCm();
+
+    // Verify results
+    verify(mockTriggerPin).setState(PinState.HIGH);
+    verify(mockTriggerPin).setState(PinState.LOW);
+    verify(mockEchoPin, atLeastOnce()).getState();
+    verify(board).delayMicroseconds(10);
+
+    assertTrue(Float.isInfinite(estimatedDistCm));
   }
 
   @Test

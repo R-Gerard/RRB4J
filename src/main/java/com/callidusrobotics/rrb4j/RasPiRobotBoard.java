@@ -20,6 +20,8 @@
 
 package com.callidusrobotics.rrb4j;
 
+import java.io.IOException;
+
 /**
  * API definitions for MonkMakes RasPiRobot microcontrollers.
  *
@@ -27,6 +29,44 @@ package com.callidusrobotics.rrb4j;
  * @since 1.0.0
  */
 public interface RasPiRobotBoard {
+  /**
+   * Minimum measurable distance of rangefinder in cm.
+   */
+  float RANGE_MIN_CM = 2.0f;
+
+  /**
+   * Maximum measureable distance of rangefinder in cm.
+   */
+  float RANGE_MAX_CM = 400.0f;
+
+  /**
+   * Number of microseconds to raise the rangefinder trigger.
+   */
+  int TRIGGER_MICROS = 10;
+
+  /**
+   * Speed of sound @ sea level in mm/μs.
+   */
+  float SOS_MM_MICROS = 0.34029f;
+
+  /**
+   * Maximum number of microseconds to receive a rangefinder echo.
+   * <p>
+   * Rangefinder upper limit is 400 cm<br>
+   * Double distance to account for round-trip duration:<br>
+   * 800 cm / speed of sound @ sea level = 23509.4 μs
+   */
+  int MAX_PULSE_MICROS = 23510;
+
+  /**
+   * Number of microseconds required by rangefinder to send echo pulses.
+   * <p>
+   * Rangefinder emits 8x 40 kHz pulses<br>
+   * Period of each pulse = 25 μs<br>
+   * Total time = 200 μs<br>
+   * Multiply by 2.5x fudge-factor (determined empirically) = 500 μs
+   */
+  int ECHO_DELAY_MICROS = 500;
 
   enum MotorDirection {
     FORWARD, REVERSE
@@ -110,8 +150,11 @@ public interface RasPiRobotBoard {
    * SR-04 ultrasonic rangefinder accessor.
    *
    * @return The estimated distance from the sensor to the target in centimeters
+   *         or <code>Float#POSITIVE_INFINITY</code> if the target is out of range
+   * @throws IOException
+   *           If the sensor is not connected
    */
-  float getRangeCm();
+  float getRangeCm() throws IOException;
 
   /**
    * Prepare the system for final shutdown.

@@ -20,6 +20,8 @@
 
 package com.callidusrobotics.rrb4j;
 
+import java.io.IOException;
+
 /**
  * Sample driver application to demonstrate the <code>RasPiRobotBoard</code>
  * interface.
@@ -50,6 +52,12 @@ public final class Main {
 
     System.out.println("Switch1: " + (rrb3.switch1Closed() ? "closed" : "open"));
     System.out.println("Switch2: " + (rrb3.switch2Closed() ? "closed" : "open"));
+
+    try {
+      System.out.println("Rangefinder: " + rrb3.getRangeCm() + " cm");
+    } catch (final IOException e) {
+      System.out.println("Rangefinder: not connected");
+    }
 
     rrb3.shutdown();
   }
