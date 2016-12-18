@@ -22,6 +22,8 @@ package com.callidusrobotics.rrb4j;
 
 import java.io.IOException;
 
+import com.callidusrobotics.rrb4j.RasPiRobotBoard.MotorDirection;
+
 /**
  * Sample driver application to demonstrate the <code>RasPiRobotBoard</code>
  * interface.
@@ -36,8 +38,29 @@ public final class Main {
     // No need to initialize this class
   }
 
+  /**
+   * Driver main method.
+   *
+   * @param args Optional positional CLI arguments to pass to the <code>RasPiRobot3</code> constructor:
+   * <ol>
+   *   <li>batteryVoltage</li>
+   *   <li>motorVoltage</li>
+   * </ol>
+   * @throws InterruptedException If the thread is interrupted
+   * @see RasPiRobot3#RasPiRobot3(float, float)
+   */
+  @SuppressWarnings({"PMD.NPathComplexity", "PMD.LawOfDemeter"})
   public static void main(final String[] args) throws InterruptedException {
-    final RasPiRobotBoard rrb3 = new RasPiRobot3();
+    final RasPiRobotBoard rrb3;
+
+    if (args.length > 1) {
+      final float batteryVoltage = Float.parseFloat(args[0]);
+      final float motorVoltage = Float.parseFloat(args[1]);
+
+      rrb3 = new RasPiRobot3(batteryVoltage, motorVoltage);
+    } else {
+      rrb3 = new RasPiRobot3();
+    }
 
     System.out.print("Blinking LEDs");
     for (int i = 0; i < 10; i++) {
@@ -58,6 +81,18 @@ public final class Main {
     } catch (final IOException e) {
       System.out.println("Rangefinder: not connected");
     }
+
+    System.out.println("Motors: forward...");
+    rrb3.setMotors(0.25f, MotorDirection.FORWARD, 0.25f, MotorDirection.FORWARD);
+    Thread.sleep(5000);
+
+    System.out.println("Motors: stop...");
+    rrb3.setMotors(0.0f, MotorDirection.FORWARD, 0.0f, MotorDirection.FORWARD);
+    Thread.sleep(1000);
+
+    System.out.println("Motors: reverse...");
+    rrb3.setMotors(0.25f, MotorDirection.REVERSE, 0.25f, MotorDirection.REVERSE);
+    Thread.sleep(5000);
 
     rrb3.shutdown();
   }

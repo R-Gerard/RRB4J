@@ -29,6 +29,23 @@ import java.io.IOException;
  * @since 1.0.0
  */
 public interface RasPiRobotBoard {
+
+  /**
+   * Default battery voltage.
+   */
+  float BATTERY_DEFAULT_V = 9.0f;
+
+  /**
+   * Default motor voltage.
+   */
+  float MOTOR_DEFAULT_V = 6.0f;
+
+  /**
+   * H-Bridge delay<br>
+   * Delay (in milliseconds) between changing motor direction.
+   */
+  int HB_DELAY_MILLIS = 20;
+
   /**
    * Minimum measurable distance of rangefinder in cm.
    */

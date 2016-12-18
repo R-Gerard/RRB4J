@@ -37,3 +37,9 @@ To run the sample application on a platform supported by Pi4J:
 ```
 sudo java -jar target/raspirobotboard3-1.0.0-SNAPSHOT-jar-with-dependencies.jar
 ```
+
+Overriding the default voltage settings:
+
+```
+sudo java -jar target/raspirobotboard3-1.0.0-SNAPSHOT-jar-with-dependencies.jar $BATTERY_VOLTAGE $MOTOR_VOLTAGE
+```

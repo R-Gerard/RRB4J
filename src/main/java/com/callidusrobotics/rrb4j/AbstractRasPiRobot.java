@@ -22,11 +22,15 @@ package com.callidusrobotics.rrb4j;
 
 import java.io.IOException;
 
+import org.apache.commons.lang3.Validate;
+
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.wiringpi.Gpio;
+import com.pi4j.wiringpi.SoftPwm;
 
 /**
  * Base class for implementations of <code>RasPiRobotBoard</code>.
@@ -41,8 +45,27 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
   protected GpioController gpio;
   protected GpioPinDigitalOutput led1Pin, led2Pin;
   protected GpioPinDigitalInput switch1Pin, switch2Pin;
+  protected Pin m1PwmPin, m2PwmPin;
+  protected GpioPinDigitalOutput m1PhasePin1, m1PhasePin2, m2PhasePin1, m2PhasePin2;
   protected GpioPinDigitalOutput rangeTriggerPin;
   protected GpioPinDigitalInput rangeEchoPin;
+
+  private boolean motorsInitialized;
+  protected final float pwmScale;
+  protected MotorDirection m1Direction;
+  protected MotorDirection m2Direction;
+
+  protected AbstractRasPiRobot() {
+    // Default voltage settings that the RRBv3 Python library uses
+    pwmScale = MOTOR_DEFAULT_V / BATTERY_DEFAULT_V;
+  }
+
+  protected AbstractRasPiRobot(final float batteryVoltage, final float motorVoltage) {
+    Validate.finite(batteryVoltage, "Battery voltage must be a real number");
+    Validate.finite(motorVoltage, "Motor voltage must be a real number");
+
+    pwmScale = motorVoltage / batteryVoltage;
+  }
 
   @Override
   public void setLed1(final boolean enabled) {
@@ -76,7 +99,37 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
 
   @Override
   public void setMotors(final float m1Speed, final MotorDirection m1Direction, final float m2Speed, final MotorDirection m2Direction) {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    Validate.notNull(m1Direction, "MotorDirection can not be null");
+    Validate.notNull(m2Direction, "MotorDirection can not be null");
+    Validate.inclusiveBetween(0.0, 1.0, m1Speed, "Motor speed must be in the range [0, 1]");
+    Validate.inclusiveBetween(0.0, 1.0, m2Speed, "Motor speed must be in the range [0, 1]");
+
+    if (!motorsInitialized) {
+      softPwmCreate(m1PwmPin);
+      softPwmCreate(m2PwmPin);
+
+      motorsInitialized = true;
+    }
+
+    // Stop the motors before reversing polarity
+    if (this.m1Direction != m1Direction || this.m2Direction != m2Direction) {
+      softPwmWrite(m1PwmPin, 0);
+      softPwmWrite(m2PwmPin, 0);
+
+      this.m1Direction = m1Direction;
+      this.m2Direction = m2Direction;
+
+      try {
+        Thread.sleep(HB_DELAY_MILLIS);
+      } catch (InterruptedException e) {}
+    }
+
+    m1PhasePin1.setState(m1Direction != MotorDirection.FORWARD);
+    m1PhasePin2.setState(m1Direction == MotorDirection.FORWARD);
+    m2PhasePin1.setState(m2Direction != MotorDirection.FORWARD);
+    m2PhasePin2.setState(m2Direction == MotorDirection.FORWARD);
+    softPwmWrite(m1PwmPin, (int) (100 * m1Speed * pwmScale));
+    softPwmWrite(m2PwmPin, (int) (100 * m2Speed * pwmScale));
   }
 
   @Override
@@ -115,6 +168,21 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
   @Override
   public void shutdown() {
     gpio.shutdown();
+  }
+
+  // Wrapper around SoftPwm.softPwmCreate to hide static methods
+  protected void softPwmCreate(final Pin pin) {
+    SoftPwm.softPwmCreate(pin.getAddress(), 0, 100);
+  }
+
+  // Wrapper around SoftPwm.softPwmStop to hide static methods
+  protected void softPwmStop(final Pin pin) {
+    SoftPwm.softPwmStop(pin.getAddress());
+  }
+
+  // Wrapper around SoftPwm.softPwmWrite to hide static methods
+  protected void softPwmWrite(final Pin pin, final int value) {
+    SoftPwm.softPwmWrite(pin.getAddress(), value);
   }
 
   // Wrapper around Gpio.delayMicroseconds to hide static methods

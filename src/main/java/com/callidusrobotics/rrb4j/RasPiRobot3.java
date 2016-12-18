@@ -39,8 +39,34 @@ import com.pi4j.io.gpio.RaspiPinNumberingScheme;
  * @since 1.0.0
  */
 public class RasPiRobot3 extends AbstractRasPiRobot {
+  /**
+   * Uses default voltage settings:
+   * <ul>
+   *   <li>Battery:
+   *   {@value com.callidusrobotics.rrb4j.RasPiRobotBoard#BATTERY_DEFAULT_V} volts
+   *   </li>
+   *   <li>Motors:
+   *   {@value com.callidusrobotics.rrb4j.RasPiRobotBoard#MOTOR_DEFAULT_V} volts
+   *   </li>
+   * </ul>
+   */
   public RasPiRobot3() {
     super();
+
+    GpioFactory.setDefaultProvider(new RaspiGpioProvider(RaspiPinNumberingScheme.BROADCOM_PIN_NUMBERING));
+    gpio = GpioFactory.getInstance();
+
+    init();
+  }
+
+  /**
+   * @param batteryVoltage
+   *          The nominal voltage of the power source
+   * @param motorVoltage
+   *          The maximum voltage of the motors
+   */
+  public RasPiRobot3(final float batteryVoltage, final float motorVoltage) {
+    super(batteryVoltage, motorVoltage);
 
     GpioFactory.setDefaultProvider(new RaspiGpioProvider(RaspiPinNumberingScheme.BROADCOM_PIN_NUMBERING));
     gpio = GpioFactory.getInstance();
@@ -57,6 +83,15 @@ public class RasPiRobot3 extends AbstractRasPiRobot {
     init();
   }
 
+  // Constructor for unit tests
+  RasPiRobot3(final GpioController gpio, final float batteryVoltage, final float motorVoltage) {
+    super(batteryVoltage, motorVoltage);
+
+    this.gpio = gpio;
+
+    init();
+  }
+
   private void init() {
     led1Pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_08, "LED1", PinState.LOW);
     led1Pin.setShutdownOptions(true, PinState.LOW);
@@ -67,6 +102,13 @@ public class RasPiRobot3 extends AbstractRasPiRobot {
     // TODO: Add support for debounce and event listeners
     switch1Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     switch2Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    m1PwmPin = RaspiPin.GPIO_24;
+    m2PwmPin = RaspiPin.GPIO_14;
+    m1PhasePin1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_17, "M1Phase1", PinState.LOW);
+    m1PhasePin2 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, "M1Phase2", PinState.LOW);
+    m2PhasePin1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_10, "M2Phase1", PinState.LOW);
+    m2PhasePin2 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_25, "M2Phase2", PinState.LOW);
 
     rangeTriggerPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW);
     rangeTriggerPin.setShutdownOptions(true, PinState.LOW);

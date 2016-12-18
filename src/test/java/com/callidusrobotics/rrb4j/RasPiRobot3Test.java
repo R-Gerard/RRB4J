@@ -41,6 +41,7 @@ import com.callidusrobotics.rrb4j.RasPiRobotBoard.MotorDirection;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
@@ -54,6 +55,10 @@ public class RasPiRobot3Test {
   @Mock GpioPinDigitalOutput mockLed2Pin;
   @Mock GpioPinDigitalInput mockSwitch1Pin;
   @Mock GpioPinDigitalInput mockSwitch2Pin;
+  @Mock GpioPinDigitalOutput mockM1PhasePin1;
+  @Mock GpioPinDigitalOutput mockM1PhasePin2;
+  @Mock GpioPinDigitalOutput mockM2PhasePin1;
+  @Mock GpioPinDigitalOutput mockM2PhasePin2;
   @Mock GpioPinDigitalOutput mockTriggerPin;
   @Mock GpioPinDigitalInput mockEchoPin;
 
@@ -67,6 +72,11 @@ public class RasPiRobot3Test {
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1")).thenReturn(mockSwitch1Pin);
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2")).thenReturn(mockSwitch2Pin);
 
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_17, "M1Phase1", PinState.LOW)).thenReturn(mockM1PhasePin1);
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, "M1Phase2", PinState.LOW)).thenReturn(mockM1PhasePin2);
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_10, "M2Phase1", PinState.LOW)).thenReturn(mockM2PhasePin1);
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_25, "M2Phase2", PinState.LOW)).thenReturn(mockM2PhasePin2);
+
     when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW)).thenReturn(mockTriggerPin);
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_23, "Echo", PinPullResistance.PULL_DOWN)).thenReturn(mockEchoPin);
 
@@ -74,6 +84,10 @@ public class RasPiRobot3Test {
     board = spy(new RasPiRobot3(mockGpio));
 
     doNothing().when(board).delayMicroseconds(Matchers.anyLong());
+    doNothing().when(board).softPwmCreate(RaspiPin.GPIO_24);
+    doNothing().when(board).softPwmCreate(RaspiPin.GPIO_14);
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_24, 0);
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_14, 0);
 
     // Verify constructor calls
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_08, "LED1", PinState.LOW);
@@ -81,6 +95,11 @@ public class RasPiRobot3Test {
 
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_17, "M1Phase1", PinState.LOW);
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_04, "M1Phase2", PinState.LOW);
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_10, "M2Phase1", PinState.LOW);
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_25, "M2Phase2", PinState.LOW);
 
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_18, "Trigger", PinState.LOW);
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_23, "Echo", PinPullResistance.PULL_DOWN);
@@ -92,6 +111,29 @@ public class RasPiRobot3Test {
   @After
   public void after() {
     verifyNoMoreInteractions(mockGpio);
+  }
+
+  @Test
+  public void defaultConstructor() {
+    // Verify results
+    assertEquals(RasPiRobotBoard.MOTOR_DEFAULT_V / RasPiRobotBoard.BATTERY_DEFAULT_V, board.pwmScale, Float.MIN_NORMAL);
+  }
+
+  @Test
+  public void constructorCustomVoltage() {
+    final float batteryVoltage = 12.0f;
+    final float motorVoltage = 3.0f;
+
+    // Initialize mocks
+    GpioPinDigitalOutput mockOutputPin = mock(GpioPinDigitalOutput.class);
+    GpioController mockMotorGpio = mock(GpioController.class);
+    when(mockMotorGpio.provisionDigitalOutputPin(isA(Pin.class), isA(String.class), isA(PinState.class))).thenReturn(mockOutputPin);
+
+    // Unit under test
+    board = new RasPiRobot3(mockMotorGpio, batteryVoltage, motorVoltage);
+
+    // Verify results
+    assertEquals(motorVoltage / batteryVoltage, board.pwmScale, Float.MIN_NORMAL);
   }
 
   @Test
@@ -166,16 +208,98 @@ public class RasPiRobot3Test {
     board.setOc2(true);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void setMotorsForwardFull() {
+    // Initialize mocks
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
     // Unit under test
     board.setMotors(1.0f, MotorDirection.FORWARD, 1.0f, MotorDirection.FORWARD);
+
+    // Verify results
+    verify(board).softPwmCreate(RaspiPin.GPIO_24);
+    verify(board).softPwmCreate(RaspiPin.GPIO_14);
+    verify(board).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    verify(board).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
+    verify(mockM1PhasePin1).setState(false);
+    verify(mockM1PhasePin2).setState(true);
+    verify(mockM2PhasePin1).setState(false);
+    verify(mockM2PhasePin2).setState(true);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void setMotorsReverseFull() {
+    // Initialize mocks
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
     // Unit under test
     board.setMotors(1.0f, MotorDirection.REVERSE, 1.0f, MotorDirection.REVERSE);
+
+    // Verify results
+    verify(board).softPwmCreate(RaspiPin.GPIO_24);
+    verify(board).softPwmCreate(RaspiPin.GPIO_14);
+    verify(board).softPwmWrite(RaspiPin.GPIO_24, 0);
+    verify(board).softPwmWrite(RaspiPin.GPIO_14, 0);
+    verify(board).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    verify(board).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
+    verify(mockM1PhasePin1).setState(true);
+    verify(mockM1PhasePin2).setState(false);
+    verify(mockM2PhasePin1).setState(true);
+    verify(mockM2PhasePin2).setState(false);
+  }
+
+  @Test
+  public void setMotorsTurnHalf() {
+    // Initialize mocks
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_24, (int) (50 * board.pwmScale));
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_14, (int) (50 * board.pwmScale));
+
+    // Unit under test
+    board.setMotors(0.5f, MotorDirection.FORWARD, 0.5f, MotorDirection.REVERSE);
+
+    // Verify results
+    verify(board).softPwmCreate(RaspiPin.GPIO_24);
+    verify(board).softPwmCreate(RaspiPin.GPIO_14);
+    verify(board).softPwmWrite(RaspiPin.GPIO_24, (int) (50 * board.pwmScale));
+    verify(board).softPwmWrite(RaspiPin.GPIO_14, (int) (50 * board.pwmScale));
+
+    verify(mockM1PhasePin1).setState(false);
+    verify(mockM1PhasePin2).setState(true);
+    verify(mockM2PhasePin1).setState(true);
+    verify(mockM2PhasePin2).setState(false);
+  }
+
+  @Test
+  public void setMotorsForwardReverseFull() {
+    // Initialize mocks
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    doNothing().when(board).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
+    // Unit under test
+    board.setMotors(1.0f, MotorDirection.FORWARD, 1.0f, MotorDirection.FORWARD);
+    board.setMotors(1.0f, MotorDirection.REVERSE, 1.0f, MotorDirection.REVERSE);
+
+    // Verify results
+    verify(board).softPwmCreate(RaspiPin.GPIO_24);
+    verify(board).softPwmCreate(RaspiPin.GPIO_14);
+    verify(board, times(2)).softPwmWrite(RaspiPin.GPIO_24, 0);
+    verify(board, times(2)).softPwmWrite(RaspiPin.GPIO_14, 0);
+    verify(board, times(2)).softPwmWrite(RaspiPin.GPIO_24, (int) (100 * board.pwmScale));
+    verify(board, times(2)).softPwmWrite(RaspiPin.GPIO_14, (int) (100 * board.pwmScale));
+
+    verify(mockM1PhasePin1).setState(true);
+    verify(mockM1PhasePin2).setState(false);
+    verify(mockM2PhasePin1).setState(true);
+    verify(mockM2PhasePin2).setState(false);
+
+    verify(mockM1PhasePin1).setState(false);
+    verify(mockM1PhasePin2).setState(true);
+    verify(mockM2PhasePin1).setState(false);
+    verify(mockM2PhasePin2).setState(true);
   }
 
   @Test(expected = UnsupportedOperationException.class)
