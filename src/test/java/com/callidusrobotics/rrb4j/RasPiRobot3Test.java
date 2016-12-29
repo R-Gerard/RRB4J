@@ -55,6 +55,8 @@ public class RasPiRobot3Test {
   @Mock GpioPinDigitalOutput mockLed2Pin;
   @Mock GpioPinDigitalInput mockSwitch1Pin;
   @Mock GpioPinDigitalInput mockSwitch2Pin;
+  @Mock GpioPinDigitalOutput mockOc1Pin;
+  @Mock GpioPinDigitalOutput mockOc2Pin;
   @Mock GpioPinDigitalOutput mockM1PhasePin1;
   @Mock GpioPinDigitalOutput mockM1PhasePin2;
   @Mock GpioPinDigitalOutput mockM2PhasePin1;
@@ -71,6 +73,9 @@ public class RasPiRobot3Test {
 
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1")).thenReturn(mockSwitch1Pin);
     when(mockGpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2")).thenReturn(mockSwitch2Pin);
+
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_22, "OC1", PinState.LOW)).thenReturn(mockOc1Pin);
+    when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_27, "OC2", PinState.LOW)).thenReturn(mockOc2Pin);
 
     when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_17, "M1Phase1", PinState.LOW)).thenReturn(mockM1PhasePin1);
     when(mockGpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, "M1Phase2", PinState.LOW)).thenReturn(mockM1PhasePin2);
@@ -95,6 +100,9 @@ public class RasPiRobot3Test {
 
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     verify(mockGpio).provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_22, "OC1", PinState.LOW);
+    verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_27, "OC2", PinState.LOW);
 
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_17, "M1Phase1", PinState.LOW);
     verify(mockGpio).provisionDigitalOutputPin(RaspiPin.GPIO_04, "M1Phase2", PinState.LOW);
@@ -194,18 +202,26 @@ public class RasPiRobot3Test {
     assertFalse(switch2Closed);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void setCollectorsLowSuccess() {
     // Unit under test
     board.setOc1(false);
     board.setOc2(false);
+
+    // Verify results
+    verify(mockOc1Pin).setState(false);
+    verify(mockOc2Pin).setState(false);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void setCollectorsHighSuccess() {
     // Unit under test
     board.setOc1(true);
     board.setOc2(true);
+
+    // Verify results
+    verify(mockOc1Pin).setState(true);
+    verify(mockOc2Pin).setState(true);
   }
 
   @Test

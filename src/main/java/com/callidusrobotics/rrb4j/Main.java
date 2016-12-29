@@ -76,6 +76,16 @@ public final class Main {
     System.out.println("Switch1: " + (rrb3.switch1Closed() ? "closed" : "open"));
     System.out.println("Switch2: " + (rrb3.switch2Closed() ? "closed" : "open"));
 
+    System.out.println("Toggling OC1...");
+    rrb3.setOc1(true);
+    Thread.sleep(5000);
+    rrb3.setOc1(false);
+
+    System.out.println("Toggling OC2...");
+    rrb3.setOc2(true);
+    Thread.sleep(5000);
+    rrb3.setOc2(false);
+
     try {
       System.out.println("Rangefinder: " + rrb3.getRangeCm() + " cm");
     } catch (final IOException e) {

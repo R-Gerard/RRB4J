@@ -29,7 +29,7 @@ import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.RaspiPinNumberingScheme;
 
 /**
- * RasPiRobot Board v3 implementation.
+ * RasPiRobot Board v3 (latest hardware revision) implementation.
  * <p>
  * This implementation is thread-safe but not reentrant.<br>
  * Multi-threaded applications will need to implement their own synchronization
@@ -102,6 +102,9 @@ public class RasPiRobot3 extends AbstractRasPiRobot {
     // TODO: Add support for debounce and event listeners
     switch1Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11, "Switch1");
     switch2Pin = gpio.provisionDigitalInputPin(RaspiPin.GPIO_09, "Switch2");
+
+    oc1Pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_22, "OC1", PinState.LOW);
+    oc2Pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_27, "OC2", PinState.LOW);
 
     m1PwmPin = RaspiPin.GPIO_24;
     m2PwmPin = RaspiPin.GPIO_14;

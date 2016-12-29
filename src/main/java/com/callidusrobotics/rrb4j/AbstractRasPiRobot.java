@@ -45,6 +45,7 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
   protected GpioController gpio;
   protected GpioPinDigitalOutput led1Pin, led2Pin;
   protected GpioPinDigitalInput switch1Pin, switch2Pin;
+  protected GpioPinDigitalOutput oc1Pin, oc2Pin;
   protected Pin m1PwmPin, m2PwmPin;
   protected GpioPinDigitalOutput m1PhasePin1, m1PhasePin2, m2PhasePin1, m2PhasePin2;
   protected GpioPinDigitalOutput rangeTriggerPin;
@@ -89,12 +90,12 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
 
   @Override
   public void setOc1(final boolean enabled) {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    oc1Pin.setState(enabled);
   }
 
   @Override
   public void setOc2(final boolean enabled) {
-    throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+    oc2Pin.setState(enabled);
   }
 
   @Override
