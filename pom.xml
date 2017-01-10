@@ -3,7 +3,7 @@
 
   <groupId>com.callidusrobotics.rrb4j</groupId>
   <artifactId>raspirobotboard</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>RRB4J</name>
@@ -42,7 +42,7 @@
     <connection>scm:git:git@github.com:R-Gerard/RRB4J.git</connection>
     <developerConnection>scm:git:git@github.com:R-Gerard/RRB4J.git</developerConnection>
     <url>https://github.com/R-Gerard/RRB4J</url>
-    <tag>1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
