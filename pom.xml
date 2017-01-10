@@ -8,6 +8,8 @@
   <packaging>jar</packaging>
 
   <name>RRB4J</name>
+  <description>Java implementation of RasPiRobotBoard3 (RRB3) library</description>
+  <url>https://github.com/R-Gerard/RRB4J</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,8 +34,27 @@
     <developer>
       <id>r-gerard</id>
       <name>Rusty Gerard</name>
+      <organization>Callidus Robotics</organization>
+      <organizationUrl>http://github.com/r-gerard</organizationUrl>
     </developer>
   </developers>
+
+  <scm>
+    <connection>scm:git:git@github.com:R-Gerard/RRB4J.git</connection>
+    <developerConnection>scm:git:git@github.com:R-Gerard/RRB4J.git</developerConnection>
+    <url>https://github.com/R-Gerard/RRB4J</url>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <dependencies>
     <dependency> 
@@ -69,8 +90,58 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>ossrh</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.7</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>false</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+          <releaseProfiles>ossrh</releaseProfiles>
+          <useReleaseProfile>false</useReleaseProfile>
+          <tagNameFormat>@{project.version}</tagNameFormat>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
