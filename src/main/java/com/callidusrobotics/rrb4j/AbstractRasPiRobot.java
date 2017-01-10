@@ -133,7 +133,7 @@ abstract class AbstractRasPiRobot implements RasPiRobotBoard {
     softPwmWrite(m2PwmPin, (int) (100 * m2Speed * pwmScale));
   }
 
-  @Override
+  //@Override
   public void setStepper(final MotorDirection direction, final int delayMillis) {
     throw new UnsupportedOperationException(NOT_IMPLEMENTED);
   }

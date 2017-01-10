@@ -161,7 +161,7 @@ public interface RasPiRobotBoard {
    *          Number of milliseconds between each phase change, must be positive
    *          and nonzero
    */
-  void setStepper(MotorDirection direction, int delayMillis);
+  //void setStepper(MotorDirection direction, int delayMillis);
 
   /**
    * SR-04 ultrasonic rangefinder accessor.
