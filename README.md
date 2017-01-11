@@ -6,10 +6,23 @@ RRB4J is built on top of Pi4J:
 
 For information about the MonkMakes RRB3, see: https://www.monkmakes.com/rrb3/
 
-# Setup
-You'll need Apache Maven to compile RRB4J.
+Released builds are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ccom.callidusrobotics.rrb4j).
 
-You'll need Pi4J to run your application.
+# Maven Coordinates
+Use the following coordinates to include RRB4J in your project:
+
+```
+<dependency>
+  <groupId>com.callidusrobotics.rrb4j</groupId>
+  <artifactId>raspirobotboard</artifactId>
+  <version>${rrb4j.version}</version>
+</dependency>
+```
+
+# Setup
+You'll need Apache Maven to compile RRB4J from source.
+
+You'll need Pi4J to run your application with RRB4J.
 
 ## Maven
 Install Apache Maven. The preferred method is to use the Maven Version Manager (mvnvm):
